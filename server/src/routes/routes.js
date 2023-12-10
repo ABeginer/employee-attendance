@@ -214,23 +214,38 @@ router.get(
   cors(),
   authenticateToken,
   async (req, res) => {
-      const date = new Date().toLocaleDateString();
-      const attenUser = await attenModel.find({ email: req.user.email, date: date });
-      if(attenUser == ''){
-        return res.status(200).send('');
-      }
+    const date = new Date().toLocaleDateString();
+    const attenUser = await attenModel.find({
+      email: req.user.email,
+      date: date,
+    });
+    if (attenUser == "") {
+      return res.status(200).send("");
+    }
 
-      return res.status(200).send(attenUser)
-   
+    return res.status(200).send(attenUser);
   }
 );
+router.get('/users/get/all/user', cors(),authenticateToken, async (req,res) => {
+  try{
+    const allUser = await userModel.find({});
+    return res.status(200).send(allUser);
+  }catch(err){
+    console.log(err);
+    return res.status(400).send('sth gone wrong at getting all user');
+  }
+})
 router.post(
   "/user/take/attendance",
   cors(),
   authenticateToken,
   async (req, res) => {
-    const currentDate= new Date().toLocaleDateString();
-    const currentTime= new Date().toLocaleTimeString([], { hour: '2-digit', minute: "2-digit", hour12: false });
+    const currentDate = new Date().toLocaleDateString();
+    const currentTime = new Date().toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
     const newAttend = new attenModel({
       userId: req.user.id,
       email: req.user.email,
@@ -238,88 +253,31 @@ router.post(
       checkInTime: currentTime,
       checkOutTime: "",
     });
-    try{
+    try {
       await newAttend.save();
       return res.status(200).send(currentTime);
-    }
-    catch(err){
+    } catch (err) {
       console.log(err);
-      return res.status(400).send('sth gone wrong at adding atten model');
+      return res.status(400).send("sth gone wrong at adding atten model");
     }
   }
 );
-// router.post("/user/test", authenticateToken, async (req, res) => {
-//   let datetime = new Date();
-//   const date = datetime.toISOString();
-//   const year = date.slice(0, 4);
 
-//   const month = date.slice(5, 7);
-
-//   const day = date.slice(9, 10);
-
-//   let attenData = await attenDataModel.find({
-//     year: year,
-//     month: month,
-//     day: day,
-//   });
-
-//   console.log(attenData);
-//   if (attenData == "") {
-//     const data = new attenDataModel({
-//       year: year,
-//       month: month,
-//       day: day,
-//       userTakeAtten: [],
-//     });
-//     try {
-//       await data.save().catch((err) => {
-//         console.log(err);
-//       });
-//     } catch (err) {
-//       console.log(err);
-//     }
-//     attenData = await attenDataModel.find({
-//       year: year,
-//       month: month,
-//       day: day,
-//     });
-
-//   }
-//   const filter = {id: attenData[0]["id"]};
-
-//   const changObj = {$push :{userTakeAtten:  [req.user.email]}}
-
-//   try{
-
-//   await attenDataModel.updateOne(filter,changObj);
-
-//   return res.status(200).send("everything is good");
-
-//   }catch(err){
-//     console.log(err);
-//     return res.status(400).send('sth gone wrong at add atten user');
-//   }
-//   // try {
-//   //   await attenDataModel.updateOne(filter, changeObj);
-//   //   return res.status(200).send("add data successfully");
-//   // } catch (err) {
-//   //   console.log(err);
-//   //   console.log('this is the thing gone wrong')
-//   //   return res.status(400).send('sth gone wrong at adding data')
-//   // }
-// });
 router.post("/user/check/out", cors(), authenticateToken, async (req, res) => {
-  const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: "2-digit", hour12: false });
+  const time = new Date().toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
   const date = new Date().toLocaleDateString();
-  const filter = {email : req.user.email, date: date};
-  const changeObj = {$set:{checkOutTime: time}};
-  try{
-    await attenModel.updateOne(filter,changeObj);
-    return res.status(200).send('check out successfully')
-  }
-  catch(err){
+  const filter = { email: req.user.email, date: date };
+  const changeObj = { $set: { checkOutTime: time } };
+  try {
+    await attenModel.updateOne(filter, changeObj);
+    return res.status(200).send("check out successfully");
+  } catch (err) {
     console.log(err);
-    return res.status(400).send('sth gone wrong at checking our user');
+    return res.status(400).send("sth gone wrong at checking our user");
   }
 });
 function authenticateToken(req, res, next) {
