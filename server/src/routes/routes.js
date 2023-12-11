@@ -326,6 +326,8 @@ router.post('/users/change/user/role', cors(),authenticateToken,async(req,res)=>
   
 })
 router.post('/users/change/user/email', cors(),authenticateToken,async(req,res)=>{
+  // req.user.email -> email muon doi
+  // req.user.changeEmail -> email sau khi doi
   try{
    const filter = {email: req.body.email}
    const changeObj ={$set:{email: req.body.changeEmail}}
