@@ -6,6 +6,7 @@ let userModel = new mongoose.Schema({
   Rate: Number,
   First_name: String,
   Last_name: String,
+  Active: Boolean,
 });
 let user = new mongoose.model("Users", userModel);
 module.exports = user;

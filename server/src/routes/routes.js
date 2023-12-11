@@ -48,6 +48,7 @@ router.post("/addNewUser", async (req, res) => {
         Rate: req.body.Rate,
         First_name: req.body.First_name,
         Last_name: req.body.Last_name,
+        Active : req.body.Active
       });
 
       data
@@ -122,7 +123,7 @@ router.post("/user/login", async (req, res) => {
   }
   let loginUser = await userModel.find({ email: req.body.email });
 
-  if (loginUser == "") {
+  if (loginUser == "" || loginUser[0]["Active"] === 'false') {
     return res.status(404).json({ message: "user does not exist" });
   } else {
     try {
@@ -220,26 +221,36 @@ router.get(
     return res.status(200).send(attenUser);
   }
 );
-router.get('/users/get/all/user', cors(),authenticateToken, async (req,res) => {
-  try{
-    const allEmployee = await userModel.find({Role: "employee"} );
-    
-    return res.status(200).send( allEmployee);
-  }catch(err){
-    console.log(err);
-    return res.status(400).send('sth gone wrong at getting all user');
+router.get(
+  "/users/get/all/user",
+  cors(),
+  authenticateToken,
+  async (req, res) => {
+    try {
+      const allEmployee = await userModel.find({ Role: "employee", Active: 'true' });
+
+      return res.status(200).send(allEmployee);
+    } catch (err) {
+      console.log(err);
+      return res.status(400).send("sth gone wrong at getting all user");
+    }
   }
-})
-router.get('/users/get/all/atten/user', cors(),authenticateToken, async (req,res) =>{
-  const date = new Date().toLocaleDateString();
-  try{
-    const allAttenUser = await attenModel.find({date:date})
-    return res.status(200).send( allAttenUser);
-  }catch(err){
-    console.log(err)
-    return res.status(400).send('sth gone wrong at getting atten user')
+);
+router.get(
+  "/users/get/all/atten/user",
+  cors(),
+  authenticateToken,
+  async (req, res) => {
+    const date = new Date().toLocaleDateString();
+    try {
+      const allAttenUser = await attenModel.find({ date: date });
+      return res.status(200).send(allAttenUser);
+    } catch (err) {
+      console.log(err);
+      return res.status(400).send("sth gone wrong at getting atten user");
+    }
   }
-})
+);
 router.post(
   "/user/take/attendance",
   cors(),
@@ -285,6 +296,22 @@ router.post("/user/check/out", cors(), authenticateToken, async (req, res) => {
     return res.status(400).send("sth gone wrong at checking our user");
   }
 });
+router.post(
+  "/users/deactive/user",
+  cors(),
+  authenticateToken,
+  async (req, res) => {
+    try{
+      const filter = {email: req.user.email};
+      const changeObj = {$set:{Active : "false"}};
+      await userModel.updateOne(filter,changeObj);
+      return res.status(200).send('deactive user successfully');
+    }catch(err){
+      console.log(err);
+      return res.status(400).send('sth gone wrong at deleting user');
+    }
+  }
+);
 function authenticateToken(req, res, next) {
   const authHeader = req.headers["authorization"];
 
