@@ -14,6 +14,7 @@ module.exports = router;
 const userModel = require("../models/model.js");
 const attenModel = require("../models/attendanceModel.js");
 const authModel = require("../models/authModel.js");
+const { ConnectionClosedEvent } = require("mongodb");
 router.use(cors());
 router.use(cors({ origin: true, credentials: true }));
 // router.options("*", cors());
@@ -139,7 +140,7 @@ router.post("/user/login", async (req, res) => {
           Last_name: loginUser[0]["Last_name"],
         };
         const accessToken = jwt.sign(resUser, process.env.ACCESS_TOKEN_SECRET, {
-          expiresIn: "15m",
+          expiresIn: "120m",
         });
         return res.status(200).json({ accessToken: accessToken }); //, user: resUser  Role: loginUser[0][Role]
       } else {
@@ -312,6 +313,32 @@ router.post(
     }
   }
 );
+router.post('/users/change/user/role', cors(),authenticateToken,async(req,res)=>{
+   try{
+    const filter = {email: req.body.email}
+    const changeObj ={$set:{Role: req.body.changeRole}}
+    await userModel.updateOne(filter,changeObj)
+    return res.status(200).send('change Role successfully');
+   }catch(err){
+    console.log(err);
+    return res.status(400).send('change Role failed');
+   }
+  
+})
+router.post('/users/change/user/email', cors(),authenticateToken,async(req,res)=>{
+  try{
+   const filter = {email: req.body.email}
+   const changeObj ={$set:{email: req.body.changeEmail}}
+   await userModel.updateOne(filter,changeObj)
+   return res.status(200).send('change email successfully');
+  }catch(err){
+   console.log(err);
+   return res.status(400).send('change email failed');
+  }
+ 
+})
+
+
 function authenticateToken(req, res, next) {
   const authHeader = req.headers["authorization"];
 
