@@ -19,26 +19,20 @@ router.use(cors({ origin: true, credentials: true }));
 // router.options("*", cors());
 router.use(cors({ origin: "*" }));
 router.use(function (req, res, next) {
-  // Website you wish to allow to connect
   res.setHeader("Access-Control-Allow-Origin", "*");
 
-  // Request methods you wish to allow
   res.setHeader(
     "Access-Control-Allow-Methods",
     "GET, POST, OPTIONS, PUT, PATCH, DELETE"
   );
 
-  // Request headers you wish to allow
   res.setHeader(
     "Access-Control-Allow-Headers",
     "X-Requested-With,content-type,Authorization"
   );
 
-  // Set to true if you need the website to include cookies in the requests sent
-  // to the API (e.g. in case you use sessions)
   res.setHeader("Access-Control-Allow-Credentials", true);
 
-  // Pass to next layer of middleware
   next();
 });
 router.post("/addNewUser", async (req, res) => {
@@ -228,11 +222,22 @@ router.get(
 );
 router.get('/users/get/all/user', cors(),authenticateToken, async (req,res) => {
   try{
-    const allUser = await userModel.find({});
-    return res.status(200).send(allUser);
+    const allEmployee = await userModel.find({Role: "employee"} );
+    
+    return res.status(200).send( allEmployee);
   }catch(err){
     console.log(err);
     return res.status(400).send('sth gone wrong at getting all user');
+  }
+})
+router.get('/users/get/all/atten/user', cors(),authenticateToken, async (req,res) =>{
+  const date = new Date().toLocaleDateString();
+  try{
+    const allAttenUser = await attenModel.find({date:date})
+    return res.status(200).send( allAttenUser);
+  }catch(err){
+    console.log(err)
+    return res.status(400).send('sth gone wrong at getting atten user')
   }
 })
 router.post(
