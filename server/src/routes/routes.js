@@ -122,15 +122,15 @@ router.post("/user/login", async (req, res) => {
     return res.status(400).send("have not insert email or address");
   }
   let loginUser = await userModel.find({ email: req.body.email });
+  if(loginUser[0]['Active'] == false ){
+    return res.status(404).json({ message: "user is not active" });
 
-  if (loginUser == "" || loginUser[0]["Active"] === 'false') {
+  }
+  if (loginUser == "") {
     return res.status(404).json({ message: "user does not exist" });
   } else {
     try {
       if (await bcrypt.compare(req.body.password, loginUser[0]["password"])) {
-        // email = req.body.email;
-        // password = req.body.password;
-
         let resUser = {
           email: loginUser[0]["email"],
           Role: loginUser[0]["Role"],
