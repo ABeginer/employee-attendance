@@ -15,12 +15,13 @@ const userModel = require("../models/model.js");
 const attenModel = require("../models/attendanceModel.js");
 const authModel = require("../models/authModel.js");
 const { ConnectionClosedEvent } = require("mongodb");
+const attendance = require("../models/attendanceModel.js");
 router.use(cors());
 router.use(cors({ origin: true, credentials: true }));
 // router.options("*", cors());
 router.use(cors({ origin: "*" }));
 router.use(function (req, res, next) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Origin", "http://localhost:3000");
 
   res.setHeader(
     "Access-Control-Allow-Methods",
@@ -49,7 +50,7 @@ router.post("/addNewUser", async (req, res) => {
         Rate: req.body.Rate,
         First_name: req.body.First_name,
         Last_name: req.body.Last_name,
-        Active : req.body.Active
+        Active: req.body.Active,
       });
 
       data
@@ -123,13 +124,22 @@ router.post("/user/login", async (req, res) => {
     return res.status(400).send("have not insert email or address");
   }
   let loginUser = await userModel.find({ email: req.body.email });
-  if(loginUser[0]['Active'] == false ){
-    return res.status(404).json({ message: "user is not active" });
 
-  }
   if (loginUser == "") {
     return res.status(404).json({ message: "user does not exist" });
   } else {
+    if (loginUser[0]["Active"] == false) {
+      return res.status(404).json({ message: "user is not active" });
+    }
+    const currentDate = new Date().toLocaleDateString();
+
+    let attend = await attenModel.find({
+      email: loginUser[0]["email"],
+      date: currentDate,
+    });
+    if (attend != '' && attend[0]["checkOutTime"] != "") {
+      return res.status(401).send("user already check out");
+    }
     try {
       if (await bcrypt.compare(req.body.password, loginUser[0]["password"])) {
         let resUser = {
@@ -228,7 +238,10 @@ router.get(
   authenticateToken,
   async (req, res) => {
     try {
-      const allEmployee = await userModel.find({ Role: "employee", Active: 'true' });
+      const allEmployee = await userModel.find({
+        Role: "employee",
+        Active: "true",
+      });
 
       return res.status(200).send(allEmployee);
     } catch (err) {
@@ -302,44 +315,51 @@ router.post(
   cors(),
   authenticateToken,
   async (req, res) => {
-    try{
-      const filter = {email: req.user.email};
-      const changeObj = {$set:{Active : "false"}};
-      await userModel.updateOne(filter,changeObj);
-      return res.status(200).send('deactive user successfully');
-    }catch(err){
+    try {
+      const filter = { email: req.user.email };
+      const changeObj = { $set: { Active: "false" } };
+      await userModel.updateOne(filter, changeObj);
+      return res.status(200).send("deactive user successfully");
+    } catch (err) {
       console.log(err);
-      return res.status(400).send('sth gone wrong at deleting user');
+      return res.status(400).send("sth gone wrong at deleting user");
     }
   }
 );
-router.post('/users/change/user/role', cors(),authenticateToken,async(req,res)=>{
-   try{
-    const filter = {email: req.body.email}
-    const changeObj ={$set:{Role: req.body.changeRole}}
-    await userModel.updateOne(filter,changeObj)
-    return res.status(200).send('change Role successfully');
-   }catch(err){
-    console.log(err);
-    return res.status(400).send('change Role failed');
-   }
-  
-})
-router.post('/users/change/user/email', cors(),authenticateToken,async(req,res)=>{
-  // req.user.email -> email muon doi
-  // req.user.changeEmail -> email sau khi doi
-  try{
-   const filter = {email: req.body.email}
-   const changeObj ={$set:{email: req.body.changeEmail}}
-   await userModel.updateOne(filter,changeObj)
-   return res.status(200).send('change email successfully');
-  }catch(err){
-   console.log(err);
-   return res.status(400).send('change email failed');
+router.post(
+  "/users/change/user/role",
+  cors(),
+  authenticateToken,
+  async (req, res) => {
+    try {
+      const filter = { email: req.body.email };
+      const changeObj = { $set: { Role: req.body.changeRole } };
+      await userModel.updateOne(filter, changeObj);
+      return res.status(200).send("change Role successfully");
+    } catch (err) {
+      console.log(err);
+      return res.status(400).send("change Role failed");
+    }
   }
- 
-})
-
+);
+router.post(
+  "/users/change/user/email",
+  cors(),
+  authenticateToken,
+  async (req, res) => {
+    // req.user.email -> email muon doi
+    // req.user.changeEmail -> email sau khi doi
+    try {
+      const filter = { email: req.body.email };
+      const changeObj = { $set: { email: req.body.changeEmail } };
+      await userModel.updateOne(filter, changeObj);
+      return res.status(200).send("change email successfully");
+    } catch (err) {
+      console.log(err);
+      return res.status(400).send("change email failed");
+    }
+  }
+);
 
 function authenticateToken(req, res, next) {
   const authHeader = req.headers["authorization"];
